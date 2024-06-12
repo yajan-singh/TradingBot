@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 
@@ -22,6 +23,10 @@ type Config struct {
 		MembershipChannelID string `json:"membership_channel_id"`
 		Barer               string `json:"barer"`
 	} `json:"discord"`
+	Telegram struct {
+		Token  string `json:"token"`
+		ChatID string `json:"chat_id"`
+	} `json:"telegram"`
 }
 
 type PostRequest struct {
@@ -66,18 +71,33 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		fmt.Println("Message: ")
-		fmt.Println(req.Message)
 
 		if req.Discord == "true" {
 			Wiscord.ChannelMessageSend("1250111990395965550", req.Message)
 		}
 		if req.Telegram == "true" {
-			fmt.Println("TELEGRAM")
+			baseURL := "https://api.telegram.org/bot" + cfg.Telegram.Token + "/sendMessage"
+			params := url.Values{}
+			params.Add("chat_id", cfg.Telegram.ChatID)
+			params.Add("text", req.Message)
+
+			resp, err := http.Get(baseURL + "?" + params.Encode())
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				body, _ := ioutil.ReadAll(resp.Body)
+				fmt.Println("Error:", resp.StatusCode, string(body))
+			} else {
+				fmt.Println("Message sent successfully!")
+			}
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "SENT"})
 	})
-	go router.Run(":1809")
+	go router.Run("localhost:1809")
 
 	Run()
 

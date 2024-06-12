@@ -11,12 +11,12 @@ import (
 
 type News struct {
 	Timestamp int    `json:"timestamp"`
-	DaysAgo   int    `json:"daysAgo"`
+	DaysAgo   string `json:"daysAgo"`
 	Author    string `json:"author"`
 	Title     string `json:"title"`
 	Teaser    string `json:"teaser"`
 	URL       string `json:"url"`
-	ID        int    `json:"id"`
+	ID        string `json:"id"`
 	Ticker    string `json:"ticker"`
 }
 
