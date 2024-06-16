@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sort"
 	"time"
+
+	"golang.org/x/exp/slices"
 )
 
 type News struct {
@@ -66,8 +68,10 @@ func Req_news(token string) []News {
 	if err != nil {
 		fmt.Println(err)
 	}
+	var tickers []string
+
 	for i := range news {
-		if news[i].Timestamp < (int(time.Now().Unix()) - 660) {
+		if (news[i].Timestamp < (int(time.Now().Unix()) - 660)) && slices.Contains(tickers, news[i].Ticker) {
 			news = append(news[:i], news[i+1:]...)
 		}
 	}
