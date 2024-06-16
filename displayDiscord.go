@@ -66,7 +66,7 @@ func Run() {
 
 func watch() {
 	for {
-		if time.Now().Minute()%10 == 0 {
+		if time.Now().Second()%5 == 0 {
 			N = Req_news(cfg.Discord.Barer)
 			for {
 				if N != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"time"
 
@@ -13,13 +14,17 @@ import (
 
 type News struct {
 	Timestamp int    `json:"timestamp"`
-	DaysAgo   string `json:"daysAgo"`
+	DaysAgo   int    `json:"daysAgo"`
 	Author    string `json:"author"`
 	Title     string `json:"title"`
 	Teaser    string `json:"teaser"`
 	URL       string `json:"url"`
 	ID        string `json:"id"`
 	Ticker    string `json:"ticker"`
+}
+
+type Tickers struct {
+	Tickers []string `json:"tickers"`
 }
 
 func Req_news(token string) []News {
@@ -68,15 +73,19 @@ func Req_news(token string) []News {
 	if err != nil {
 		fmt.Println(err)
 	}
-	var tickers []string
-
+	var tickers Tickers
+	file, _ := os.ReadFile("tickers.json")
+	_ = json.Unmarshal([]byte(file), &tickers)
+	var newsFiltered []News
 	for i := range news {
-		if (news[i].Timestamp < (int(time.Now().Unix()) - 660)) && slices.Contains(tickers, news[i].Ticker) {
-			news = append(news[:i], news[i+1:]...)
+		if i < len(news) {
+			if (news[i].Timestamp >= (int(time.Now().Unix()) - 10)) && slices.Contains(tickers.Tickers, news[i].Ticker) {
+				newsFiltered = append(newsFiltered, news[i])
+			}
 		}
 	}
-	sort.Slice(news[:], func(i, j int) bool {
-		return news[i].Timestamp < news[j].Timestamp
+	sort.Slice(newsFiltered[:], func(i, j int) bool {
+		return newsFiltered[i].Timestamp < newsFiltered[j].Timestamp
 	})
-	return news
+	return newsFiltered
 }
