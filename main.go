@@ -25,7 +25,7 @@ type Config struct {
 		ServerID               string `json:"server_id"`
 		MembershipChannelID    string `json:"membership_channel_id"`
 		Barer                  string `json:"barer"`
-		anouncement_channel_id string `json:"anouncement_channel_id"`
+		Anouncement_channel_id string `json:"anouncement_channel_id"`
 	} `json:"discord"`
 	Telegram struct {
 		Token  string `json:"token"`
@@ -145,7 +145,7 @@ func main() {
 		}
 		if req.Discord == "true" {
 
-			Wiscord.ChannelMessageSend(cfg.Discord.anouncement_channel_id, req.Message)
+			Wiscord.ChannelMessageSend(cfg.Discord.Anouncement_channel_id, req.Message)
 		}
 		if req.Telegram == "true" {
 			baseURL := "https://api.telegram.org/bot" + cfg.Telegram.Token + "/sendMessage"

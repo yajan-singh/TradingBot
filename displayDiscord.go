@@ -93,9 +93,6 @@ func watch() {
 						Author: &discordgo.MessageEmbedAuthor{
 							Name: N[i].Ticker,
 						},
-						Thumbnail: &discordgo.MessageEmbedThumbnail{
-							URL: "https://cdn.iconscout.com/icon/premium/png-256-thumb/url-2879059-2393887.png",
-						},
 					}
 
 					Wiscord.ChannelMessageSendEmbed(cfg.Discord.MembershipChannelID, embed)
