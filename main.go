@@ -170,8 +170,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "SENT"})
 	})
 
-	go router.Run("localhost:1809")
-
+	go router.RunTLS(":1809", "certificate.crt", "private.key")
 	Run()
 
 	c := make(chan os.Signal, 1)

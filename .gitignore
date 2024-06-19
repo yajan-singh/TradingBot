@@ -2,3 +2,5 @@ config.json
 .DS_Store
 0.pack
 index.pack
+certificate.crt
+private.key
