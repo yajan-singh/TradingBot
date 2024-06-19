@@ -68,6 +68,10 @@ func Req_news(token string) []News {
 	if err != nil {
 		fmt.Println(err)
 	}
+	if res.StatusCode != 200 {
+		fmt.Println("Error: ", res.StatusCode)
+		return nil
+	}
 	var news []News
 	err = json.Unmarshal(body, &news)
 	if err != nil {
@@ -77,6 +81,7 @@ func Req_news(token string) []News {
 	file, _ := os.ReadFile("tickers.json")
 	_ = json.Unmarshal([]byte(file), &tickers)
 	var newsFiltered []News
+	newsFiltered = []News{}
 	for i := range news {
 		if i < len(news) {
 			if (news[i].Timestamp >= (int(time.Now().Unix()) - 10)) && slices.Contains(tickers.Tickers, news[i].Ticker) {

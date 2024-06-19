@@ -21,10 +21,11 @@ var cfg Config
 
 type Config struct {
 	Discord struct {
-		Token               string `json:"token"`
-		ServerID            string `json:"server_id"`
-		MembershipChannelID string `json:"membership_channel_id"`
-		Barer               string `json:"barer"`
+		Token                  string `json:"token"`
+		ServerID               string `json:"server_id"`
+		MembershipChannelID    string `json:"membership_channel_id"`
+		Barer                  string `json:"barer"`
+		anouncement_channel_id string `json:"anouncement_channel_id"`
 	} `json:"discord"`
 	Telegram struct {
 		Token  string `json:"token"`
@@ -77,15 +78,13 @@ func main() {
 			break
 		}
 		token := Get_token()
-		fmt.Println("Token: ", token)
+		fmt.Println("TokenMain: ", token)
 		if token != "ERROR" {
 			cfg.Discord.Barer = token
 		} else {
 			fmt.Println("Cannot fetch token")
 			return
 		}
-		r, _ := json.Marshal(cfg)
-		err = ioutil.WriteFile("output.json", r, 0644)
 		N = Req_news(cfg.Discord.Barer)
 	}
 	var BotToken = cfg.Discord.Token
@@ -145,7 +144,8 @@ func main() {
 			return
 		}
 		if req.Discord == "true" {
-			Wiscord.ChannelMessageSend("1250111990395965550", req.Message)
+
+			Wiscord.ChannelMessageSend(cfg.Discord.anouncement_channel_id, req.Message)
 		}
 		if req.Telegram == "true" {
 			baseURL := "https://api.telegram.org/bot" + cfg.Telegram.Token + "/sendMessage"

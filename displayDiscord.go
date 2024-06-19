@@ -1,16 +1,19 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 
 	// "os"
 	// "os/signal"
-	"strings"
+
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"golang.org/x/exp/slices"
 )
+
+var Dupes []string
 
 func checkNilErr(e error) {
 	if e != nil {
@@ -27,28 +30,26 @@ func Run() {
 	// checkNilErr(err)
 
 	// add a event handler
-	msg, err := Wiscord.ChannelMessages(cfg.Discord.MembershipChannelID, 100, "", "", "")
-	if err == nil && len(msg) > 0 {
-		fmt.Println("Message Found!")
-	}
-	flag := true
 	for i := range N {
-		for j := range msg {
-			if strings.Contains(msg[j].Content, N[i].URL) {
-				fmt.Println("DUPE FOUND!")
-				flag = false
-				break
+		if !slices.Contains(Dupes, N[i].URL) {
+			embed := &discordgo.MessageEmbed{
+				URL:         N[i].URL,
+				Title:       N[i].Title,
+				Description: N[i].Teaser,
+				Color:       0x00ff00,
+				Author: &discordgo.MessageEmbedAuthor{
+					Name: N[i].Ticker,
+				},
 			}
-		}
-		if flag {
-			Wiscord.ChannelMessageSend(cfg.Discord.MembershipChannelID, N[i].URL)
-			msg, err = Wiscord.ChannelMessages(cfg.Discord.MembershipChannelID, 100, "", "", "")
-			if err == nil && len(msg) > 0 {
-				fmt.Println("Message Found!")
-			}
-		}
-		flag = true
 
+			Wiscord.ChannelMessageSendEmbed(cfg.Discord.MembershipChannelID, embed)
+			if len(Dupes) >= 100 {
+				Dupes = Dupes[1:]
+				Dupes = append(Dupes, N[i].URL)
+			} else {
+				Dupes = append(Dupes, N[i].URL)
+			}
+		}
 	}
 
 	// open session
@@ -73,38 +74,38 @@ func watch() {
 					break
 				}
 				token := Get_token()
-				fmt.Println("Token: ", token)
+				fmt.Println("TokenWatch: ", token)
 				if token != "ERROR" {
 					cfg.Discord.Barer = token
 				} else {
 					fmt.Println("Cannot fetch token")
 					return
 				}
-				r, _ := json.Marshal(cfg)
-				err = ioutil.WriteFile("output.json", r, 0644)
 				N = Req_news(cfg.Discord.Barer)
 			}
-			msg, err := Wiscord.ChannelMessages(cfg.Discord.MembershipChannelID, 100, "", "", "")
-			if err == nil && len(msg) > 0 {
-				fmt.Println("Message: ", msg[0].Content)
-			}
-			flag := true
 			for i := range N {
-				for j := range msg {
-					if strings.Contains(msg[j].Content, N[i].URL) {
-						fmt.Println("DUPE FOUND!")
-						flag = false
-						break
+				if !slices.Contains(Dupes, N[i].URL) {
+					embed := &discordgo.MessageEmbed{
+						URL:         N[i].URL,
+						Title:       N[i].Title,
+						Description: N[i].Teaser,
+						Color:       0x00ff00,
+						Author: &discordgo.MessageEmbedAuthor{
+							Name: N[i].Ticker,
+						},
+						Thumbnail: &discordgo.MessageEmbedThumbnail{
+							URL: "https://cdn.iconscout.com/icon/premium/png-256-thumb/url-2879059-2393887.png",
+						},
+					}
+
+					Wiscord.ChannelMessageSendEmbed(cfg.Discord.MembershipChannelID, embed)
+					if len(Dupes) >= 100 {
+						Dupes = Dupes[1:]
+						Dupes = append(Dupes, N[i].URL)
+					} else {
+						Dupes = append(Dupes, N[i].URL)
 					}
 				}
-				if flag {
-					Wiscord.ChannelMessageSend(cfg.Discord.MembershipChannelID, N[i].URL)
-					msg, err = Wiscord.ChannelMessages(cfg.Discord.MembershipChannelID, 100, "", "", "")
-					if err == nil && len(msg) > 0 {
-						fmt.Println("Message: ", msg[0].Content)
-					}
-				}
-				flag = true
 			}
 		}
 	}

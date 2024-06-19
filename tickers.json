@@ -1,5 +1,36 @@
 {
     "tickers": [
-        "AAPL"
+        "AAPL",
+        "AMD",
+        "AMZN",
+        "ARM",
+        "AVGO",
+        "BA",
+        "BABA",
+        "BTC",
+        "COIN",
+        "CRWD",
+        "GOOGL",
+        "GS",
+        "HD",
+        "IWM",
+        "LRCX",
+        "LULU",
+        "MDB",
+        "META",
+        "MSFT",
+        "MSTR",
+        "NFLX",
+        "NKE",
+        "NVDA",
+        "QCOM",
+        "QQQ",
+        "SBUX",
+        "SMCI",
+        "SNOW",
+        "SPX",
+        "TGT",
+        "TSLA",
+        "UBER"
     ]
 }
