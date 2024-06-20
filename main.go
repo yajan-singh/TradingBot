@@ -21,15 +21,17 @@ var cfg Config
 
 type Config struct {
 	Discord struct {
-		Token                  string `json:"token"`
-		ServerID               string `json:"server_id"`
-		MembershipChannelID    string `json:"membership_channel_id"`
-		Barer                  string `json:"barer"`
-		Anouncement_channel_id string `json:"anouncement_channel_id"`
+		Token                 string `json:"token"`
+		ServerID              string `json:"server_id"`
+		MembershipChannelID   string `json:"membership_channel_id"`
+		Barer                 string `json:"barer"`
+		Safe_channel_id       string `json:"safe_channel_id"`
+		Aggressive_channel_id string `json:"aggressive_channel_id"`
 	} `json:"discord"`
 	Telegram struct {
-		Token  string `json:"token"`
-		ChatID string `json:"chat_id"`
+		Token            string `json:"token"`
+		SafeChatID       string `json:"safe_chat_id"`
+		AggressiveChatID string `json:"aggressive_chat_id"`
 	} `json:"telegram"`
 }
 
@@ -38,6 +40,7 @@ type PostRequest struct {
 	Discord  string `json:"discord"`
 	Telegram string `json:"telegram"`
 	Token    string `json:"token"`
+	Type     string `json:"type"`
 }
 
 type LoginRequest struct {
@@ -144,16 +147,47 @@ func main() {
 			return
 		}
 		if req.Discord == "true" {
+			if req.Type == "aggressive" {
+				fmt.Println(cfg.Discord.Aggressive_channel_id)
+				Wiscord.ChannelMessageSend(cfg.Discord.Aggressive_channel_id, req.Message)
+			}
+			if req.Type == "safe" {
+				Wiscord.ChannelMessageSend(cfg.Discord.Safe_channel_id, req.Message)
 
-			Wiscord.ChannelMessageSend(cfg.Discord.Anouncement_channel_id, req.Message)
+			}
+			if req.Type == "both" {
+				Wiscord.ChannelMessageSend(cfg.Discord.Safe_channel_id, req.Message)
+				Wiscord.ChannelMessageSend(cfg.Discord.Aggressive_channel_id, req.Message)
+			}
 		}
 		if req.Telegram == "true" {
+			resp := &http.Response{}
 			baseURL := "https://api.telegram.org/bot" + cfg.Telegram.Token + "/sendMessage"
-			params := url.Values{}
-			params.Add("chat_id", cfg.Telegram.ChatID)
-			params.Add("text", req.Message)
+			if req.Type == "safe" {
+				params := url.Values{}
+				params.Add("chat_id", cfg.Telegram.SafeChatID)
+				params.Add("text", req.Message)
 
-			resp, err := http.Get(baseURL + "?" + params.Encode())
+				resp, err = http.Get(baseURL + "?" + params.Encode())
+			} else if req.Type == "aggressive" {
+				params := url.Values{}
+				params.Add("chat_id", cfg.Telegram.AggressiveChatID)
+				params.Add("text", req.Message)
+
+				resp, err = http.Get(baseURL + "?" + params.Encode())
+			} else {
+				params := url.Values{}
+				params.Add("chat_id", cfg.Telegram.SafeChatID)
+				params.Add("text", req.Message)
+
+				_, _ = http.Get(baseURL + "?" + params.Encode())
+
+				params = url.Values{}
+				params.Add("chat_id", cfg.Telegram.AggressiveChatID)
+				params.Add("text", req.Message)
+
+				resp, err = http.Get(baseURL + "?" + params.Encode())
+			}
 			if err != nil {
 				fmt.Println("Error:", err)
 				return
@@ -171,6 +205,7 @@ func main() {
 	})
 
 	go router.RunTLS(":1809", "certificate.crt", "private.key")
+	// go router.Run("localhost:1809")
 	Run()
 
 	c := make(chan os.Signal, 1)
