@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -19,9 +21,41 @@ import (
 var N []News
 var cfg Config
 
+type discordCodeRequest struct {
+	Code string `json:"code"`
+}
+type UserInfoResponse struct {
+	ID                   string      `json:"id"`
+	Username             string      `json:"username"`
+	Avatar               string      `json:"avatar"`
+	Discriminator        string      `json:"discriminator"`
+	PublicFlags          json.Number `json:"public_flags"`
+	Flags                string      `json:"flags"`
+	Banner               string      `json:"banner"`
+	AccentColor          string      `json:"accent_color"`
+	GlobalName           string      `json:"global_name"`
+	AvatarDecorationData string      `json:"avatar_decoration_data"`
+	BannerColor          string      `json:"banner_color"`
+	Clan                 string      `json:"clan"`
+	MFAEnabled           string      `json:"mfa_enabled"`
+	Locale               string      `json:"locale"`
+	PremiumType          string      `json:"premium_type"`
+	Email                string      `json:"email"`
+	Verified             string      `json:"verified"`
+}
+type discordCodeResponse struct {
+	TokenType    string `json:"token_type"`
+	AccessToken  string `json:"access_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+}
+
 type Config struct {
 	Discord struct {
 		Token                 string `json:"token"`
+		Secret                string `json:"secret"`
+		Id                    string `json:"id"`
 		ServerID              string `json:"server_id"`
 		MembershipChannelID   string `json:"membership_channel_id"`
 		Barer                 string `json:"barer"`
@@ -203,7 +237,70 @@ func main() {
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "SENT"})
 	})
+	router.POST("/discordtoken", func(c *gin.Context) {
 
+		var temp discordCodeRequest
+		if err := c.ShouldBindJSON(&temp); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		var code = temp.Code
+		url := "https://discord.com/api/v10/oauth2/token"
+		method := "POST"
+
+		payload := strings.NewReader("grant_type=authorization_code&code=" + code + "&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fbuy")
+
+		client := &http.Client{}
+		req, err := http.NewRequest(method, url, payload)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(cfg.Discord.Id+":"+cfg.Discord.Secret))+"==")
+		req.Header.Add("Cookie", "__cfruid=ca60a239a74cf77d972dd3f37de310957ad863c3-1719434344; __dcfduid=2086805833fc11ef8ad7ee895a1966da; __sdcfduid=2086805833fc11ef8ad7ee895a1966dabb64ffed8fe077cff16d81dd824bd75afa6b7ad6948c60825098f4f60d57cc62; _cfuvid=dTeEv5tUO18W2t4hZmhxCNcCj7KjGJ2RlCzC7bwbVtY-1719434344243-0.0.1.1-604800000")
+
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer res.Body.Close()
+
+		var result discordCodeResponse
+		body, _ := ioutil.ReadAll(res.Body)
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		url = "https://discord.com/api/users/@me"
+
+		req, err = http.NewRequest("GET", url, nil)
+		if err != nil {
+			fmt.Println("error creating request: ", err)
+		}
+
+		req.Header.Set("Authorization", "Bearer "+result.AccessToken)
+
+		client = &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println("error making request: ", err)
+		}
+		defer resp.Body.Close()
+
+		var userInfo UserInfoResponse
+		body2, _ := ioutil.ReadAll(resp.Body)
+		err = json.Unmarshal(body2, &userInfo)
+		if err != nil {
+			fmt.Println("error unmarshalling response: ", err)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": userInfo})
+	})
 	go router.RunTLS(":1809", "certificate.crt", "private.key")
 	// go router.Run("localhost:1809")
 	Run()
