@@ -248,7 +248,7 @@ func main() {
 		url := "https://discord.com/api/v10/oauth2/token"
 		method := "POST"
 
-		payload := strings.NewReader("grant_type=authorization_code&code=" + code + "&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fbuy")
+		payload := strings.NewReader("grant_type=authorization_code&code=" + code + "&redirect_uri=https%3A%2F%2Fapi.rollintrades.com%3A3000%2Fbuy")
 
 		client := &http.Client{}
 		req, err := http.NewRequest(method, url, payload)
